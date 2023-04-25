@@ -297,8 +297,13 @@ FMGM_mc	<- function(data, ind_disc, group, t=1, L=NULL, eta=2, lambda_intra, lam
 	
 	MGM_list	<- make_MGM_list(X, Y, group) ;
 	
-	X	<- rbind(MGM_list[[1]]$Continuous[], MGM_list[[2]]$Continuous[]) ;
-	Y	<- rbind(MGM_list[[1]]$Discrete[],   MGM_list[[2]]$Discrete[]) ;
+	if (length(MGM_list) > 1) {
+	  X	<- rbind(MGM_list[[1]]$Continuous[], MGM_list[[2]]$Continuous[]) ;
+	  Y	<- rbind(MGM_list[[1]]$Discrete[],   MGM_list[[2]]$Discrete[]) ;
+	} else {
+	  X <- MGM_list[[1]]$Continuous[] ;
+	  Y <- MGM_list[[1]]$Discrete[] ;
+	}
 	p_x	<- ncol(X) ;	p_y	<- ncol(Y) ;	pq	<- p_x + p_y ;
 	rownames(Y)	<- rownames(X) ;
 	data	<- cbind(X,Y) ;
