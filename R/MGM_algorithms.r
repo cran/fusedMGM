@@ -33,7 +33,7 @@ f_fun	<- function(MGM_input, cores) {
 	d_rho	<- MGM_input$d_rho ;
 	d_phi	<- MGM_input$d_phi ;
 	
-	for (s in seq(p_y)) {
+	for (s in seq(p_x)) {
 		if (beta[s,s] == 0) {
 			return(Inf) ;
 		}

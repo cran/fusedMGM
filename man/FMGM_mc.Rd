@@ -18,8 +18,8 @@ FMGM_mc(
   prior_list = NULL,
   converge_by_edge = TRUE,
   tol_edge = 3,
-  tol_mgm = 1e-04,
-  tol_g = 0.005,
+  tol_mgm = 1e-05,
+  tol_g = 1e-05,
   tol_fpa = 1e-12,
   maxit = 1e+06,
   polish = TRUE,
@@ -55,9 +55,9 @@ FMGM_mc(
 
 \item{tol_edge}{Integer. Number of consecutive iterations of convergence to stop the iteration. Default: 3}
 
-\item{tol_mgm}{Numeric. Cutoff of network edge RMSD for convergence. Default: 1e-04}
+\item{tol_mgm}{Numeric. Cutoff of network edge RMSD for convergence. Default: 1e-05}
 
-\item{tol_g}{Numeric. Cutoff of iternations in prox-grad map calculation. Default: 5e-03}
+\item{tol_g}{Numeric. Cutoff of iternations in prox-grad map calculation. Default: 1e-05}
 
 \item{tol_fpa}{Numeric. Cutoff for fixed-point approach. Default: 1e-12}
 
@@ -81,20 +81,39 @@ Infers networks from 2-class mixed data
 If the value of Lipschitz constant, L, is not provided, the backtracking will be performed
 }
 \examples{
-\donttest{
+chk <- tolower(Sys.getenv("_R_CHECK_LIMIT_CORES_", ""))
+
+if (Sys.info()['sysname'] != 'Linux') {
+  cores=1L
+} else {
+  chk = tolower(Sys.getenv("_R_CHECK_LIMIT_CORES_", ""))
+  if (nzchar(chk) && (chk != "false")) {
+    cores=2L
+  } else {
+    cores=parallel::detectCores() - 1 ;
+  }
+}
+
+\dontrun{
 data(data_all) ;  # Example 500-by-100 simulation data
 data(ind_disc) ;
 
 group <- rep(c(1,2), each=250) ;
-names(group) <- seq(500) ;
-
-if (Sys.info()['sysname'] == 'Windows') {
-  cores=1
-} else {
-  cores=parallel::detectCores() ;
-}
+names(group) <- rownames(data_all) ;
 
 res_FMGM <- FMGM_mc(data_all, ind_disc, group, 
+                    lambda_intra=c(0.2,0.15,0.1), lambda_inter=c(0.2,0.15,0.1), 
+                    cores=cores, verbose=TRUE)
+}
+
+\donttest{
+data(data_mini) ; # Minimal example 500-by-10 simulation data
+data(ind_disc_mini) ;
+
+group <- rep(c(1,2), each=250) ;
+names(group) <- rownames(data_mini) ;
+
+res_FMGM_mini <- FMGM_mc(data_mini, ind_disc_mini, group, 
                     lambda_intra=c(0.2,0.15,0.1), lambda_inter=c(0.2,0.15,0.1), 
                     cores=cores, verbose=TRUE)
 }

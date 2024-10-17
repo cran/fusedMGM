@@ -6,12 +6,12 @@
 \title{An example of 2-group mixed data}
 \format{
 ## `ind_disc`
-A 250-length vector with discrete variable indices.
+A 50-length vector with discrete variable indices.
 }
 \usage{
 ind_disc
 }
 \description{
-An indicator vector which variables are categorical
+A vector indicating which columns in 'data_all' have categorical variables
 }
 \keyword{datasets}

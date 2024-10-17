@@ -43,18 +43,21 @@ MGM	<- function(X, Y, g) {
 	
 	# Convert discrete data into a dummy matrix
 	# Define list & number of unique levels of discrete variables
-    L_y		<- numeric(p_y) ;
+	L_y		<- numeric(p_y) ;
 	Y_dummy	<- fastDummies::dummy_cols(Y, remove_selected_columns=TRUE) ;
 	
 	levels_y	<- list() ;
 	L_cumsum	<- numeric(p_y + 1) ;
 	L_cumsum[1]	<- 0 ;
-    for (r in seq(p_y)) {
-		varname			<- colnames(Y)[r] ;
-		L_y[r]			<- length(unique(Y[,r])) ;
+			 
+	for (r in seq(p_y)) {
+		varname		<- colnames(Y)[r] ;
+		L_y[r]		<- length(unique(Y[,r])) ;
 		L_cumsum[r+1]	<- L_cumsum[r] + L_y[r] ;
-        levels_y[[r]]	<- gsub(paste0(varname, "_"), "", colnames(Y_dummy)[(L_cumsum[r]+1):(L_cumsum[r+1])], fixed=TRUE) ;
+	
+		levels_y[[r]]	<- gsub(paste0(varname, "_"), "", colnames(Y_dummy)[(L_cumsum[r]+1):(L_cumsum[r+1])], fixed=TRUE) ;
 	}
+	
 	L_sum	<- sum(L_y) ;
 	Y_dummy	<- as.matrix(Y_dummy) ;
 	mode(Y_dummy)	<- "double" ;
@@ -62,10 +65,11 @@ MGM	<- function(X, Y, g) {
 	rownames(Y_dummy)	<- rownames(Y) ;
     
 	# Convert discrete data into level indices
-    Y_lev	<- matrix(0, nrow=n_y, ncol=p_y) ;
-    for (n in seq(n_y)) { for (r in seq(p_y)) {
+	Y_lev	<- matrix(0, nrow=n_y, ncol=p_y) ;
+	for (n in seq(n_y)) { for (r in seq(p_y)) {
 		Y_lev[n,r]	<- match(as.character(Y[n,r]), levels_y[[r]]) ;
 	}}
+	
 	Y_lev	<- as.big.matrix(Y_lev) ;
 	colnames(Y_lev)	<- colnames(Y) ;
 	rownames(Y_lev)	<- rownames(Y) ;
@@ -167,14 +171,14 @@ make_MGM_list	<- function(X, Y, group) {
 		for (r in ind_y) {
 			# Note: levels with singleton will be ignored
 			lev_uniq	<- Reduce(intersect, lapply(Y_list, function(y) {
-																tab_uniq	<- table(y[,r]) ;
-																levlist		<- names(tab_uniq)[tab_uniq > 1] ;
-																return(levlist) ;
-																})) ;
+											tab_uniq	<- table(y[,r]) ;
+											levlist		<- names(tab_uniq)[tab_uniq > 1] ;
+											return(levlist) ;
+											})) ;
 			
 			if (length(lev_uniq) <= 1) {	# 1 or less common level: drop the variable
 				drop_y	<- c(drop_y, r) ;
-			} else {						# Else, drop samples not in the common levels
+			} else {			# Else, drop samples not in the common levels
 			
 				for (g in seq(G)) {
 					y	<- Y_list[[g]] ;
@@ -247,8 +251,8 @@ make_MGM_list	<- function(X, Y, group) {
 #' @param prior_list List of prior information. Each element must be a 3-column data frames, with the 1st and the 2nd columns being variable names and the 3rd column being prior confidence (0,1)
 #' @param converge_by_edge Logical. The convergence should be judged by null differences of network edges after iteration. If FALSE, the rooted mean square difference (RMSD) of edge weights is used. Default: TRUE
 #' @param tol_edge Integer. Number of consecutive iterations of convergence to stop the iteration. Default: 3
-#' @param tol_mgm Numeric. Cutoff of network edge RMSD for convergence. Default: 1e-04
-#' @param tol_g Numeric. Cutoff of iternations in prox-grad map calculation. Default: 5e-03
+#' @param tol_mgm Numeric. Cutoff of network edge RMSD for convergence. Default: 1e-05
+#' @param tol_g Numeric. Cutoff of iternations in prox-grad map calculation. Default: 1e-05
 #' @param tol_fpa Numeric. Cutoff for fixed-point approach. Default: 1e-12
 #' @param maxit Integer. Maximum number of iterations in fixed-point approach. Default: 1000000
 #' @param polish Logical. Should the edges with the weights below the cutoff should be discarded? Default: TRUE
@@ -262,27 +266,46 @@ make_MGM_list	<- function(X, Y, group) {
 #' @importFrom stats pnorm
 #' @importFrom parallel mclapply
 #' @examples
-#' \donttest{
+#' chk <- tolower(Sys.getenv("_R_CHECK_LIMIT_CORES_", ""))
+#' 
+#' if (Sys.info()['sysname'] != 'Linux') {
+#'   cores=1L
+#' } else {
+#'   chk = tolower(Sys.getenv("_R_CHECK_LIMIT_CORES_", ""))
+#'   if (nzchar(chk) && (chk != "false")) {
+#'     cores=2L
+#'   } else {
+#'     cores=parallel::detectCores() - 1 ;
+#'   }
+#' }
+#' 
+#' \dontrun{
 #' data(data_all) ;  # Example 500-by-100 simulation data
 #' data(ind_disc) ;
 #' 
 #' group <- rep(c(1,2), each=250) ;
-#' names(group) <- seq(500) ;
-#' 
-#' if (Sys.info()['sysname'] == 'Windows') {
-#'   cores=1
-#' } else {
-#'   cores=parallel::detectCores() ;
-#' }
+#' names(group) <- rownames(data_all) ;
 #' 
 #' res_FMGM <- FMGM_mc(data_all, ind_disc, group, 
+#'                     lambda_intra=c(0.2,0.15,0.1), lambda_inter=c(0.2,0.15,0.1), 
+#'                     cores=cores, verbose=TRUE)
+#' }
+#' 
+#' \donttest{
+#' data(data_mini) ; # Minimal example 500-by-10 simulation data
+#' data(ind_disc_mini) ;
+#' 
+#' group <- rep(c(1,2), each=250) ;
+#' names(group) <- rownames(data_mini) ;
+#' 
+#' res_FMGM_mini <- FMGM_mc(data_mini, ind_disc_mini, group, 
 #'                     lambda_intra=c(0.2,0.15,0.1), lambda_inter=c(0.2,0.15,0.1), 
 #'                     cores=cores, verbose=TRUE)
 #' }
 #' @export
 FMGM_mc	<- function(data, ind_disc, group, t=1, L=NULL, eta=2, lambda_intra, lambda_intra_prior=NULL, lambda_inter, 
 					with_prior=FALSE, prior_list=NULL, converge_by_edge=TRUE, tol_edge=3,
-					tol_mgm=1e-04, tol_g=5e-03, tol_fpa=1e-12, maxit=1000000, 
+					tol_mgm=1e-05, tol_g=1e-05, tol_fpa=1e-12, maxit=1000000, 
 					polish=TRUE, tol_polish=1e-12, 
 					cores=parallel::detectCores(), verbose=FALSE){
 
@@ -298,11 +321,11 @@ FMGM_mc	<- function(data, ind_disc, group, t=1, L=NULL, eta=2, lambda_intra, lam
 	MGM_list	<- make_MGM_list(X, Y, group) ;
 	
 	if (length(MGM_list) > 1) {
-	  X	<- rbind(MGM_list[[1]]$Continuous[], MGM_list[[2]]$Continuous[]) ;
-	  Y	<- rbind(MGM_list[[1]]$Discrete[],   MGM_list[[2]]$Discrete[]) ;
+		X	<- rbind(MGM_list[[1]]$Continuous[], MGM_list[[2]]$Continuous[]) ;
+		Y	<- rbind(MGM_list[[1]]$Discrete[],   MGM_list[[2]]$Discrete[]) ;
 	} else {
-	  X <- MGM_list[[1]]$Continuous[] ;
-	  Y <- MGM_list[[1]]$Discrete[] ;
+		X	<- MGM_list[[1]]$Continuous[] ;
+		Y	<- MGM_list[[1]]$Discrete[] ;
 	}
 	p_x	<- ncol(X) ;	p_y	<- ncol(Y) ;	pq	<- p_x + p_y ;
 	rownames(Y)	<- rownames(X) ;
